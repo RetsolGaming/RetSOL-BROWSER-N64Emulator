@@ -1,4 +1,4 @@
-# 🏔️ RetSOL-BROWSER-N64Emulator
+# 🎮 RetSOL-BROWSER-N64Emulator
 **The 64-Bit Powerhouse for Play Solana (PSG1)**
 
 RetSOL N64 brings the legendary 64-bit era to your browser with a focus on performance and "Hacker Man" aesthetics. Using a custom WebAssembly engine, it pushes the limits of your PSG1 hardware.
