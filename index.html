@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RetSOL-BROWSER-N64Emulator</title>
+    <style>
+        body { 
+            background-color: #050505; 
+            background-image: linear-gradient(to bottom, #050505, #1a0033);
+            color: #00ffa3; 
+            font-family: 'Courier New', Courier, monospace; 
+            text-align: center; 
+            margin: 0; padding: 0;
+            overflow-x: hidden; 
+        }
+
+        #screen-container {
+            position: relative;
+            display: inline-block;
+            width: 100vw;
+            max-height: 60vh;
+            background: black;
+            box-shadow: 0px 0px 30px #00e0ff;
+            border-bottom: 2px solid #00e0ff;
+        }
+
+        #canvas { 
+            width: 100%; 
+            height: auto; 
+            display: block;
+        }
+
+        .menu { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            padding: 20px; 
+        }
+
+        button { 
+            padding: 18px; 
+            border: 2px solid;
+            border-radius: 0px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 12px;
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.6);
+            transition: 0.1s;
+        }
+
+        .btn-link { color: #00ffa3; border-color: #00ffa3; grid-column: span 2; box-shadow: 0 0 15px #00ffa3; }
+        .btn-load { color: #00e0ff; border-color: #00e0ff; grid-column: span 2; box-shadow: 0 0 15px #00e0ff; }
+        .btn-save { color: #ff3e81; border-color: #ff3e81; box-shadow: 0 0 15px #ff3e81; }
+        .btn-state { color: #bc00ff; border-color: #bc00ff; box-shadow: 0 0 15px #bc00ff; }
+
+        button:active { transform: scale(0.98); background: #fff; color: #000; }
+
+        #status { 
+            font-size: 11px; 
+            color: #ff00ff; 
+            margin-top: 10px; 
+            text-shadow: 0 0 8px #ff00ff;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="screen-container">
+        <canvas id="canvas"></canvas>
+    </div>
+    
+    <div id="status">RETSOL N64 READY... LOAD .Z64 ROM</div>
+
+    <div class="menu">
+        <button class="btn-link" onclick="vibrate(); selectSavesFolder()">📁 LINK SD SAVES FOLDER</button>
+        <button class="btn-load" onclick="vibrate(); loadN64Rom()">🎮 SELECT N64 GAME (.Z64)</button>
+        <button class="btn-save" onclick="vibrate(); saveN64State()">💾 MANUAL SAVE</button>
+        <button class="btn-state" onclick="vibrate(); loadN64State()">📂 LOAD .SAV FILE</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/kb-elmo/n64wasm@master/dist/n64wasm.js"></script>
+
+    <script>
+        let savesFolderHandle;
+
+        function vibrate() { if (navigator.vibrate) navigator.vibrate(40); }
+
+        async function selectSavesFolder() {
+            try {
+                savesFolderHandle = await window.showDirectoryPicker();
+                document.getElementById('status').innerText = "SD LINKED: READY FOR SAVES";
+            } catch (e) {
+                document.getElementById('status').innerText = "ERROR: LINK FAILED";
+            }
+        }
+
+        async function loadN64Rom() {
+            const [fileHandle] = await window.showOpenFilePicker();
+            const file = await fileHandle.getFile();
+            const buffer = await file.arrayBuffer();
+            // N64Wasm global init
+            window.n64wasm.loadRom(new Uint8Array(buffer));
+            document.getElementById('status').innerText = "N64 RUNNING: " + file.name;
+        }
+
+        async function saveN64State() {
+            if (!savesFolderHandle) return alert("Link SD folder first!");
+            const stateData = window.n64wasm.saveState();
+            const fileName = `retsol-n64-${Date.now()}.sav`;
+            const fileHandle = await savesFolderHandle.getFileHandle(fileName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(stateData);
+            await writable.close();
+            document.getElementById('status').innerText = "N64 SAVE CREATED: " + fileName;
+        }
+
+        async function loadN64State() {
+            const [fileHandle] = await window.showOpenFilePicker();
+            const file = await fileHandle.getFile();
+            const buffer = await file.arrayBuffer();
+            window.n64wasm.loadState(new Uint8Array(buffer));
+            document.getElementById('status').innerText = "N64 STATE RESTORED";
+        }
+    </script>
+</body>
+</html>
